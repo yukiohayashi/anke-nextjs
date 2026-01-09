@@ -14,6 +14,8 @@ interface Settings {
   is_enabled: string;
   title_prompt: string;
   choices_prompt: string;
+  max_categories: string;
+  max_keywords: string;
 }
 
 export default function AutoCreatorSettings() {
@@ -28,6 +30,8 @@ export default function AutoCreatorSettings() {
     is_enabled: 'true',
     title_prompt: '',
     choices_prompt: '',
+    max_categories: '1',
+    max_keywords: '3',
   });
   const [urls, setUrls] = useState<string[]>(['', '', '', '', '', '', '', '', '', '']);
   const [saving, setSaving] = useState(false);
@@ -66,6 +70,8 @@ export default function AutoCreatorSettings() {
       is_enabled: settingsMap.is_enabled || 'true',
       title_prompt: settingsMap.title_prompt || '',
       choices_prompt: settingsMap.choices_prompt || '',
+      max_categories: settingsMap.max_categories || '1',
+      max_keywords: settingsMap.max_keywords || '3',
     });
 
     try {
@@ -372,6 +378,41 @@ export default function AutoCreatorSettings() {
                 max="300"
               />
               <p className="mt-1 text-xs text-gray-500">各URL間の待機時間</p>
+            </div>
+          </div>
+
+          {/* カテゴリ・キーワード設定 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label htmlFor="max_categories" className="block text-sm font-medium text-gray-700 mb-2">
+                最大カテゴリ数
+              </label>
+              <input
+                type="number"
+                id="max_categories"
+                value={settings.max_categories}
+                onChange={(e) => setSettings({ ...settings, max_categories: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                min="1"
+                max="5"
+              />
+              <p className="mt-1 text-xs text-gray-500">1投稿あたりの最大カテゴリ数</p>
+            </div>
+
+            <div>
+              <label htmlFor="max_keywords" className="block text-sm font-medium text-gray-700 mb-2">
+                最大キーワード数
+              </label>
+              <input
+                type="number"
+                id="max_keywords"
+                value={settings.max_keywords}
+                onChange={(e) => setSettings({ ...settings, max_keywords: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                min="1"
+                max="10"
+              />
+              <p className="mt-1 text-xs text-gray-500">1投稿あたりの最大キーワード数（手動投稿と同じルール）</p>
             </div>
           </div>
 
