@@ -31,7 +31,7 @@ export default function RightSidebar() {
       // commentsとpostsを別々に取得して結合
       const { data: commentsData, error } = await supabase
         .from('comments')
-        .select('id, post_id, content, created_at')
+        .select('id, post_id, user_id, content, created_at')
         .eq('status', 'approved')
         .order('created_at', { ascending: false })
         .limit(5);
