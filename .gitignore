@@ -54,7 +54,3 @@ backups/
 *.tar.gz
 backup.sql
 data_only.sql
-
-# 移行元データ
-wordpress/
-anke_db/

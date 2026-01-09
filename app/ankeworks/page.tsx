@@ -114,7 +114,7 @@ export default async function AnkeworksPage() {
                       <tbody>
                         <tr className="border-b">
                           <th className="bg-gray-100 p-2 text-left font-medium w-32">報酬単価</th>
-                          <td className="p-2">1票獲得毎に{worker.vote_per_price}pt獲得</td>
+                          <td className="p-2">作成で{worker.vote_per_price}pt獲得、1票獲得毎に{worker.vote_per_price}pt獲得</td>
                         </tr>
                         <tr className="border-b">
                           <th className="bg-gray-100 p-2 text-left font-medium">残予算</th>

@@ -90,15 +90,16 @@ export async function POST(request: Request) {
     }
 
     // アンケート作成者にwork_voteポイントを付与
+    // workidがある場合（アンケワークス経由）のみポイント付与
     try {
-      // アンケート作成者を取得
+      // アンケート作成者とworkidを取得
       const { data: post } = await supabase
         .from('posts')
-        .select('user_id')
+        .select('user_id, workid')
         .eq('id', postId)
         .single();
 
-      if (post && post.user_id) {
+      if (post && post.user_id && post.workid) {
         // work_voteポイント設定を取得
         const { data: pointSetting } = await supabase
           .from('point_settings')
@@ -121,9 +122,11 @@ export async function POST(request: Request) {
             .from('points')
             .insert({
               id: nextId,
+              points: pointSetting.point_value,
               user_id: post.user_id,
               amount: pointSetting.point_value,
               type: 'work_vote',
+              related_id: postId,
               created_at: new Date().toISOString(),
             });
 

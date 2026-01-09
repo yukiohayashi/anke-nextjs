@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -35,6 +35,8 @@ export default function AnkeCreateForm() {
   const [categories, setCategories] = useState<Category[]>([]);
   const { data: session } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const workid = searchParams.get('workid');
 
   const [formData, setFormData] = useState({
     title: '',
@@ -232,7 +234,8 @@ export default function AnkeCreateForm() {
       userName: session?.user?.name,
       ...formData,
       choices: validChoices.map(c => c.value),
-      imagePreview: imagePreview // 画像プレビューを保存
+      imagePreview: imagePreview, // 画像プレビューを保存
+      workid: workid ? parseInt(workid) : undefined // workidを追加
     };
 
     sessionStorage.setItem('anke_create_data', JSON.stringify(ankeData));

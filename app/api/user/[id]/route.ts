@@ -21,7 +21,7 @@ export async function GET(
     // ユーザー情報を取得
     const { data: user, error } = await supabase
       .from('users')
-      .select('id, name, email, worker_img_url, user_description, sns_x, created_at, profile_slug')
+      .select('id, name, user_nicename, email, worker_img_url, user_description, sns_x, created_at, profile_slug')
       .eq('id', userId)
       .single();
 
@@ -32,7 +32,18 @@ export async function GET(
       );
     }
 
-    return NextResponse.json({ user });
+    // ユーザーのポイント合計を取得
+    const { data: pointsData } = await supabase
+      .from('points')
+      .select('points')
+      .eq('user_id', userId.toString());
+
+    const totalPoints = pointsData?.reduce((sum, p) => sum + (p.points || 0), 0) || 0;
+
+    return NextResponse.json({ 
+      ...user,
+      points: totalPoints
+    });
   } catch (error) {
     console.error('Error fetching user:', error);
     return NextResponse.json(

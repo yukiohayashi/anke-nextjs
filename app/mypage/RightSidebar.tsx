@@ -9,6 +9,7 @@ export default function RightSidebar() {
   const defaultAvatarUrl = 'https://anke.jp/wp-content/themes/anke/images/default_avatar.jpg';
   const [totalPoints, setTotalPoints] = useState<number>(0);
   const [profileSlug, setProfileSlug] = useState<string | null>(null);
+  const [userName, setUserName] = useState<string>('');
 
   useEffect(() => {
     if (session?.user?.id) {
@@ -22,13 +23,15 @@ export default function RightSidebar() {
         })
         .catch(err => console.error('ポイント取得エラー:', err));
       
-      // profile_slugを取得
+      // profile_slugとuser_nicenameを取得
       fetch(`/api/user/${session.user.id}`)
         .then(res => res.json())
         .then(data => {
-          if (data.user?.profile_slug) {
-            setProfileSlug(data.user.profile_slug);
+          if (data.profile_slug) {
+            setProfileSlug(data.profile_slug);
           }
+          // user_nicenameを優先的に使用
+          setUserName(data.user_nicename || data.name || session.user.name || 'ゲスト');
         })
         .catch(err => console.error('ユーザー情報取得エラー:', err));
     }
@@ -44,16 +47,18 @@ export default function RightSidebar() {
   }
 
   if (status === 'authenticated' && session) {
+    const displayName = userName || session.user?.name || 'ゲスト';
+    
     return (
       <>
         <div className="my-2.5 text-center">
           <img 
             src={defaultAvatarUrl}
-            alt={session.user?.name || 'ユーザー'} 
+            alt={displayName} 
             className="md:hidden mx-auto mb-2 rounded-full w-20 h-20 object-cover"
           />
           <Link href="/profileset" className="text-[#ff6b35]">
-            {session.user?.name || 'ゲスト'}
+            {displayName}
           </Link>
           さん<br />
           獲得ポイント: {totalPoints.toLocaleString()}pt

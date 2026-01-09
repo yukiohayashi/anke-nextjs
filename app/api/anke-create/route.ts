@@ -143,15 +143,17 @@ export async function POST(request: Request) {
     }
 
     // アンケート作成ポイントを付与（work_post）
-    try {
-      const { data: pointSetting } = await supabase
-        .from('point_settings')
-        .select('point_value')
-        .eq('point_type', 'work_post')
-        .eq('is_active', true)
-        .single();
+    // workidが指定されている場合（アンケワークス経由）のみポイント付与
+    if (workid) {
+      try {
+        const { data: pointSetting } = await supabase
+          .from('point_settings')
+          .select('point_value')
+          .eq('point_type', 'work_post')
+          .eq('is_active', true)
+          .single();
 
-      if (pointSetting && pointSetting.point_value > 0) {
+        if (pointSetting && pointSetting.point_value > 0) {
         // 最大IDを取得してシーケンスエラーを回避
         const { data: maxIdData } = await supabase
           .from('points')
@@ -165,9 +167,11 @@ export async function POST(request: Request) {
           .from('points')
           .insert({
             id: nextId,
+            points: pointSetting.point_value,
             user_id: userId,
             amount: pointSetting.point_value,
             type: 'work_post',
+            related_id: post.id,
             created_at: new Date().toISOString(),
           });
 
@@ -176,9 +180,10 @@ export async function POST(request: Request) {
         } else {
           console.log('Work post point granted:', pointSetting.point_value, 'to user:', userId);
         }
+        }
+      } catch (error) {
+        console.error('Point grant process error:', error);
       }
-    } catch (error) {
-      console.error('Point grant process error:', error);
     }
 
     return NextResponse.json({

@@ -2,23 +2,57 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useSession } from 'next-auth/react';
 
 interface User {
-  id: number;
+  id: string;
   name: string;
   points: number;
   participate_points: boolean;
 }
 
 export default function AnkeworksSidebar() {
-  // 仮のユーザー情報（実際はセッションから取得）
-  const [user] = useState<User>({
-    id: 1,
-    name: '離波ママ',
-    points: 10661,
-    participate_points: true
-  });
+  const { data: session } = useSession();
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      if (!session?.user?.id) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/user/${session.user.id}`);
+        if (response.ok) {
+          const userData = await response.json();
+          console.log('AnkeworksSidebar - User data:', userData);
+          setUser({
+            id: userData.id,
+            name: userData.user_nicename || userData.name || session.user.name || 'ユーザー',
+            points: userData.points || 0,
+            participate_points: true
+          });
+        }
+      } catch (error) {
+        console.error('Failed to fetch user:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUser();
+  }, [session]);
+
+  if (loading || !user) {
+    return (
+      <div className="bg-white p-4">
+        <div className="text-center text-gray-500">読み込み中...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white">

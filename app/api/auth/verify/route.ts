@@ -122,6 +122,7 @@ export async function POST(request: NextRequest) {
       
       const insertData = {
         id: nextId,
+        points: pointSetting.point_value,
         user_id: user.id,
         amount: pointSetting.point_value,
         type: 'regist',
