@@ -16,7 +16,7 @@ interface Like {
   post: {
     id: number;
     title: string;
-  } | null;
+  } | null | undefined;
 }
 
 interface LikesTableProps {
