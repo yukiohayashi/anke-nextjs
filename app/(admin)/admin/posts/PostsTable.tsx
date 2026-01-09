@@ -329,8 +329,21 @@ export default function PostsTable({ posts: initialPosts, initialCounts }: Posts
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {posts.map((post) => (
-              <tr key={post.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4">
+              <tr 
+                key={post.id} 
+                className="hover:bg-gray-50 cursor-pointer"
+                onClick={(e) => {
+                  // リンクやボタンのクリックは除外
+                  if ((e.target as HTMLElement).tagName === 'A' || 
+                      (e.target as HTMLElement).tagName === 'BUTTON' ||
+                      (e.target as HTMLElement).closest('a') ||
+                      (e.target as HTMLElement).closest('button')) {
+                    return;
+                  }
+                  handleSelectPost(post.id, !selectedIds.includes(post.id));
+                }}
+              >
+                <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
                   <input
                     type="checkbox"
                     checked={selectedIds.includes(post.id)}
