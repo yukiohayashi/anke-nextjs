@@ -72,7 +72,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
     },
     async session({ session, token }) {
       if (session.user) {
-        session.user.id = parseInt(token.id as string);
+        session.user.id = token.id as string;
         session.user.status = (token.status as number) || 0;
         
         // statusが設定されていない場合、データベースから取得
