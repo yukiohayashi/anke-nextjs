@@ -1,0 +1,9 @@
+# AI自動投稿のCRONジョブ
+# 5分ごとに実行（設定に応じて変更可能）
+*/5 * * * * curl -X POST http://nextjs:3000/api/auto-creator/execute-auto >> /var/log/cron.log 2>&1
+
+# AI自動投票のCRONジョブ
+# 10分ごとに実行
+*/10 * * * * curl -X POST http://nextjs:3000/api/auto-voter/execute-auto >> /var/log/cron.log 2>&1
+
+# 空行が必要

@@ -54,3 +54,5 @@ backups/
 *.tar.gz
 backup.sql
 data_only.sql
+backups/
+@backups/
