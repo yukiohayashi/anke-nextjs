@@ -10,6 +10,7 @@ interface Ankework {
   title: string;
   status: string;
   vote_budget: number;
+  guest_check: boolean;
   created_at: string;
   post_count?: number;
 }
@@ -104,6 +105,9 @@ export default function AnkeworksAdminPage() {
                 残予算
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                支払い条件
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 作成日
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -140,6 +144,15 @@ export default function AnkeworksAdminPage() {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                   {work.vote_budget.toLocaleString()} pt
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                    work.guest_check
+                      ? 'bg-blue-100 text-blue-800'
+                      : 'bg-yellow-100 text-yellow-800'
+                  }`}>
+                    {work.guest_check ? 'ゲスト可' : 'ログインのみ'}
+                  </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   {new Date(work.created_at).toLocaleDateString('ja-JP')}

@@ -40,7 +40,8 @@ async function getWorkers(category?: string) {
       const { count } = await supabase
         .from('posts')
         .select('id', { count: 'exact', head: true })
-        .eq('workid', worker.id);
+        .eq('workid', worker.id)
+        .in('status', ['publish', 'published']);
       
       return {
         ...worker,
@@ -52,20 +53,30 @@ async function getWorkers(category?: string) {
   return workersWithCount;
 }
 
-async function getVotePerPrice() {
-  const { data } = await supabase
+async function getPointSettings() {
+  const { data: workVote } = await supabase
     .from('point_settings')
     .select('point_value')
     .eq('point_type', 'work_vote')
     .eq('is_active', true)
     .single();
 
-  return data?.point_value || 10;
+  const { data: workPost } = await supabase
+    .from('point_settings')
+    .select('point_value')
+    .eq('point_type', 'work_post')
+    .eq('is_active', true)
+    .single();
+
+  return {
+    workVotePoint: workVote?.point_value || 5,
+    workPostPoint: workPost?.point_value || 5
+  };
 }
 
 export default async function AnkeworksPage() {
   const workers = await getWorkers();
-  const votePerPrice = await getVotePerPrice();
+  const { workVotePoint, workPostPoint } = await getPointSettings();
 
   const categories = [
     { name: 'すべて', slug: '', color: '#E25E8B' },
@@ -114,7 +125,7 @@ export default async function AnkeworksPage() {
                       <tbody>
                         <tr className="border-b">
                           <th className="bg-gray-100 p-2 text-left font-medium w-32">報酬単価</th>
-                          <td className="p-2">作成で{worker.vote_per_price}pt獲得、1票獲得毎に{worker.vote_per_price}pt獲得</td>
+                          <td className="p-2">作成で{workPostPoint}pt獲得、1票獲得毎に{workVotePoint}pt獲得</td>
                         </tr>
                         <tr className="border-b">
                           <th className="bg-gray-100 p-2 text-left font-medium">残予算</th>

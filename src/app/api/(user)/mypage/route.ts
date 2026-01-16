@@ -26,6 +26,13 @@ export async function GET(request: Request) {
       .order('created_at', { ascending: false })
       .limit(20);
 
+    // 運営スタッフのアバター画像を取得
+    const { data: adminUser } = await supabase
+      .from('users')
+      .select('user_img_url')
+      .eq('id', 33)
+      .single();
+
     if (adminPosts) {
       adminPosts.forEach(post => {
         notifications.push({
@@ -33,8 +40,8 @@ export async function GET(request: Request) {
           date: post.created_at,
           content: post.title.length > 40 ? post.title.substring(0, 40) + '...' : post.title,
           link: `/posts/${post.id}`,
-          avatar_src: '',
-          author_url: '/user/2',
+          avatar_src: adminUser?.user_img_url || '',
+          author_url: '/users/33',
           author_name: '運営スタッフ'
         });
       });
@@ -61,7 +68,7 @@ export async function GET(request: Request) {
         for (const reply of replies) {
           const { data: user } = await supabase
             .from('users')
-            .select('name')
+            .select('name, user_img_url')
             .eq('id', reply.user_id)
             .single();
 
@@ -70,8 +77,8 @@ export async function GET(request: Request) {
             date: reply.created_at,
             content: reply.content.length > 40 ? reply.content.substring(0, 40) + '...' : reply.content,
             link: `/posts/${reply.post_id}#anke-comment-${reply.id}`,
-            avatar_src: '',
-            author_url: `/user/${reply.user_id}`,
+            avatar_src: user?.user_img_url || '',
+            author_url: `/users/${reply.user_id}`,
             author_name: user?.name || '匿名さん',
             comment_id: reply.id
           });
@@ -102,7 +109,7 @@ export async function GET(request: Request) {
         for (const comment of postComments) {
           const { data: user } = await supabase
             .from('users')
-            .select('name')
+            .select('name, user_img_url')
             .eq('id', comment.user_id)
             .single();
 
@@ -111,8 +118,8 @@ export async function GET(request: Request) {
             date: comment.created_at,
             content: comment.content.length > 40 ? comment.content.substring(0, 40) + '...' : comment.content,
             link: `/posts/${comment.post_id}#anke-comment-${comment.id}`,
-            avatar_src: '',
-            author_url: `/user/${comment.user_id}`,
+            avatar_src: user?.user_img_url || '',
+            author_url: `/users/${comment.user_id}`,
             author_name: user?.name || '匿名さん',
             comment_id: comment.id
           });
@@ -123,9 +130,28 @@ export async function GET(request: Request) {
     // 日付順にソート
     notifications.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
+    // 既読状態を取得
+    const { data: readNotifications } = await supabase
+      .from('notification_reads')
+      .select('notification_type, notification_id')
+      .eq('user_id', userId);
+
+    const readSet = new Set(
+      (readNotifications || []).map(r => `${r.notification_type}-${r.notification_id}`)
+    );
+
+    // 各通知に既読フラグを追加
+    const notificationsWithReadStatus = notifications.map(n => {
+      const notificationKey = `${n.type}-${n.link}`;
+      return {
+        ...n,
+        is_read: readSet.has(notificationKey)
+      };
+    });
+
     // ページネーション
-    const total = notifications.length;
-    const paginatedNotifications = notifications.slice(offset, offset + limit);
+    const total = notificationsWithReadStatus.length;
+    const paginatedNotifications = notificationsWithReadStatus.slice(offset, offset + limit);
 
     return NextResponse.json({
       success: true,

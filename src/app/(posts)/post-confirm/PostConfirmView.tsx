@@ -238,7 +238,7 @@ export default function PostConfirmView() {
           type="button"
           onClick={handleBack}
           variant="outline"
-          className="px-10 py-6 text-base"
+          className="px-10 py-6 rounded font-bold text-base"
         >
           戻る
         </Button>
@@ -246,7 +246,7 @@ export default function PostConfirmView() {
           type="button"
           onClick={handleSubmit}
           disabled={submitting}
-          className="bg-[#ff6b35] hover:bg-orange-600 px-10 py-6 text-base"
+          className="bg-[#ff6b35] hover:bg-[#e58a2f] px-10 py-6 rounded font-bold text-white text-base"
         >
           {submitting ? '投稿中...' : '投稿する'}
         </Button>

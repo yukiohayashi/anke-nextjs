@@ -143,7 +143,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
       <div className="bg-gray-50 min-h-screen">
         <Header />
 
-        <main className="md:flex md:justify-center mx-auto mt-14 md:mt-[70px] md:pt-0 max-w-7xl">
+        <main className="md:flex md:justify-center mx-auto pt-[60px] md:pt-4 pb-4 max-w-7xl">
           {/* 左サイドバー */}
           <aside className="hidden md:block w-[220px]">
             <Sidebar />
@@ -191,7 +191,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
     <div className="bg-gray-50 min-h-screen">
       <Header />
 
-      <main className="md:flex md:justify-center mx-auto mt-14 md:mt-[70px] md:pt-0 max-w-7xl">
+      <main className="md:flex md:justify-center mx-auto pt-[60px] md:pt-4 pb-4 max-w-7xl">
         {/* 左サイドバー */}
         <aside className="hidden md:block w-[220px]">
           <Sidebar />

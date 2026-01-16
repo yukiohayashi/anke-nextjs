@@ -1,11 +1,13 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
+import { headers } from 'next/headers';
+import crypto from 'crypto';
 
 export async function POST(request: Request) {
   try {
     const session = await auth();
-    const { choiceId, postId } = await request.json();
+    const { choiceId, postId, sessionId } = await request.json();
 
     if (!choiceId || !postId) {
       return NextResponse.json(
@@ -14,8 +16,21 @@ export async function POST(request: Request) {
       );
     }
 
+    // IPアドレスを取得
+    const headersList = await headers();
+    const forwarded = headersList.get('x-forwarded-for');
+    const realIp = headersList.get('x-real-ip');
+    const ipAddress = forwarded ? forwarded.split(',')[0] : realIp || 'unknown';
+    
+    // セッションIDをハッシュ化（プライバシー保護）
+    const hashedSessionId = sessionId 
+      ? crypto.createHash('sha256').update(sessionId).digest('hex')
+      : null;
+
     // 既に投票済みかチェック（投票前に確認）
     const userId = session?.user?.id || null;
+    
+    // ログインユーザーの場合はuser_idでチェック
     if (userId) {
       const { data: existingVote } = await supabase
         .from('vote_history')
@@ -29,6 +44,41 @@ export async function POST(request: Request) {
           { success: false, error: '既に投票済みです' },
           { status: 400 }
         );
+      }
+    } else {
+      // ゲストユーザーの場合はIPアドレスまたはセッションIDでチェック
+      if (hashedSessionId) {
+        const { data: existingVote } = await supabase
+          .from('vote_history')
+          .select('id')
+          .eq('post_id', postId)
+          .eq('session_id', hashedSessionId)
+          .single();
+        
+        if (existingVote) {
+          return NextResponse.json(
+            { success: false, error: '既に投票済みです' },
+            { status: 400 }
+          );
+        }
+      }
+      
+      // セッションIDがない場合はIPアドレスでチェック（補助的）
+      if (!hashedSessionId && ipAddress !== 'unknown') {
+        const { data: existingVote } = await supabase
+          .from('vote_history')
+          .select('id')
+          .eq('post_id', postId)
+          .eq('ip_address', ipAddress)
+          .is('session_id', null)
+          .single();
+        
+        if (existingVote) {
+          return NextResponse.json(
+            { success: false, error: '既に投票済みです' },
+            { status: 400 }
+          );
+        }
       }
     }
 
@@ -74,15 +124,14 @@ export async function POST(request: Request) {
       .eq('id', postId);
 
     // 投票履歴を記録
-    
     const { error: historyError } = await supabase
       .from('vote_history')
       .insert({
         post_id: postId,
         user_id: userId,
         choice_id: choiceId,
-        ip_address: null,
-        session_id: null
+        ip_address: ipAddress !== 'unknown' ? ipAddress : null,
+        session_id: hashedSessionId
       });
 
     if (historyError) {
@@ -100,40 +149,53 @@ export async function POST(request: Request) {
         .single();
 
       if (post && post.user_id && post.workid) {
-        // work_voteポイント設定を取得
-        const { data: pointSetting } = await supabase
-          .from('point_settings')
-          .select('point_value')
-          .eq('point_type', 'work_vote')
-          .eq('is_active', true)
+        // workerのguest_check設定を取得
+        const { data: worker } = await supabase
+          .from('workers')
+          .select('guest_check')
+          .eq('id', post.workid)
           .single();
 
-        if (pointSetting && pointSetting.point_value > 0) {
-          // 最大IDを取得してシーケンスエラーを回避
-          const { data: maxIdData } = await supabase
-            .from('points')
-            .select('id')
-            .order('id', { ascending: false })
-            .limit(1);
-          
-          const nextId = maxIdData && maxIdData.length > 0 ? maxIdData[0].id + 1 : 1;
+        // guest_checkがfalseの場合、ログインユーザーのみポイント付与
+        if (worker && !worker.guest_check && !userId) {
+          console.log('Guest vote on login-only worker, skipping point grant');
+          // ゲストユーザーの投票なのでポイント付与をスキップ
+        } else {
+          // work_voteポイント設定を取得
+          const { data: pointSetting } = await supabase
+            .from('point_settings')
+            .select('point_value')
+            .eq('point_type', 'work_vote')
+            .eq('is_active', true)
+            .single();
 
-          const { error: pointError } = await supabase
-            .from('points')
-            .insert({
-              id: nextId,
-              points: pointSetting.point_value,
-              user_id: post.user_id,
-              amount: pointSetting.point_value,
-              type: 'work_vote',
-              related_id: postId,
-              created_at: new Date().toISOString(),
-            });
+          if (pointSetting && pointSetting.point_value > 0) {
+            // 最大IDを取得してシーケンスエラーを回避
+            const { data: maxIdData } = await supabase
+              .from('points')
+              .select('id')
+              .order('id', { ascending: false })
+              .limit(1);
+            
+            const nextId = maxIdData && maxIdData.length > 0 ? maxIdData[0].id + 1 : 1;
 
-          if (pointError) {
-            console.error('Work vote point grant error:', pointError);
-          } else {
-            console.log('Work vote point granted:', pointSetting.point_value, 'to user:', post.user_id);
+            const { error: pointError } = await supabase
+              .from('points')
+              .insert({
+                id: nextId,
+                points: pointSetting.point_value,
+                user_id: post.user_id,
+                amount: pointSetting.point_value,
+                type: 'work_vote',
+                related_id: postId,
+                created_at: new Date().toISOString(),
+              });
+
+            if (pointError) {
+              console.error('Work vote point grant error:', pointError);
+            } else {
+              console.log('Work vote point granted:', pointSetting.point_value, 'to user:', post.user_id);
+            }
           }
         }
       }

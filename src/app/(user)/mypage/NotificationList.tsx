@@ -13,6 +13,7 @@ interface Notification {
   author_url: string;
   author_name: string;
   comment_id?: number;
+  is_read?: boolean;
 }
 
 export default function NotificationList() {
@@ -56,6 +57,35 @@ export default function NotificationList() {
 
   const loadMore = () => {
     fetchNotifications(offset);
+  };
+
+  const markAsRead = async (notification: Notification) => {
+    if (!session?.user?.id || notification.is_read) return;
+
+    try {
+      await fetch('/api/mypage/mark-read', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: session.user.id,
+          notificationType: notification.type,
+          notificationId: notification.link
+        }),
+      });
+
+      // ローカル状態を更新
+      setNotifications(prev =>
+        prev.map(n =>
+          n.link === notification.link && n.type === notification.type
+            ? { ...n, is_read: true }
+            : n
+        )
+      );
+    } catch (error) {
+      console.error('既読マークエラー:', error);
+    }
   };
 
   const getNotificationText = (notification: Notification) => {
@@ -107,14 +137,17 @@ export default function NotificationList() {
             className="hover:bg-gray-100 m-1.5 px-2 pb-2.5 border-gray-300 border-b transition-colors"
           >
             <div className="flex items-start mb-2 anke_meta_info">
-              <div className="shrink-0 mr-1.5 anke_meta_icon">
+              <div className="shrink-0 mr-1.5 anke_meta_icon relative">
                 <Link href={notification.author_url}>
                   <img 
-                    src={notification.avatar_src || 'https://anke.jp/wp-content/themes/anke/images/default_avatar.jpg'} 
+                    src={notification.avatar_src || '/images/default_avatar.jpg'} 
                     alt="" 
                     className="rounded-full w-5 h-5 object-cover"
                   />
                 </Link>
+                {!notification.is_read && (
+                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-red-500 rounded-full"></span>
+                )}
               </div>
               <div className="flex flex-col anke_meta_text">
                 <div className="mb-0 text-gray-700 text-sm anke_meta_nickname">
@@ -134,6 +167,7 @@ export default function NotificationList() {
               <Link 
                 href={notification.link} 
                 className="text-gray-800 hover:text-orange-600 no-underline"
+                onClick={() => markAsRead(notification)}
               >
                 {notification.content}
               </Link>

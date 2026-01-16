@@ -52,6 +52,13 @@ export default function VoteSection({
     setIsVoting(true);
 
     try {
+      // セッションIDを取得または生成
+      let sessionId = localStorage.getItem('anke_session_id');
+      if (!sessionId) {
+        sessionId = crypto.randomUUID();
+        localStorage.setItem('anke_session_id', sessionId);
+      }
+
       const response = await fetch('/api/vote', {
         method: 'POST',
         headers: {
@@ -60,6 +67,7 @@ export default function VoteSection({
         body: JSON.stringify({
           choiceId,
           postId,
+          sessionId,
         }),
       });
 

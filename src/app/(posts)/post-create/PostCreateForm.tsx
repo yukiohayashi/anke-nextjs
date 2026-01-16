@@ -467,7 +467,7 @@ export default function PostCreateForm() {
           <Button
             type="submit"
             disabled={submitting}
-            className="bg-[#ff6b35] hover:bg-orange-600 px-10 py-6 text-base"
+            className="bg-[#ff6b35] hover:bg-[#e58a2f] px-10 py-6 rounded font-bold text-white text-base"
           >
             {submitting ? '確認画面へ移動中...' : '確認画面へ進む'}
           </Button>

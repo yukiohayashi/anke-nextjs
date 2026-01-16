@@ -3,7 +3,7 @@ import Credentials from "next-auth/providers/credentials"
 import Line from "next-auth/providers/line"
 import Twitter from "next-auth/providers/twitter"
 import bcrypt from "bcryptjs"
-import { supabase } from "@/lib/supabase"
+import { supabaseAdmin } from "@/lib/supabase"
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   session: {
@@ -25,8 +25,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return null
         }
 
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Auth - Environment check:', {
+            hasServiceRoleKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+            supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
+            email: credentials.email
+          });
+        }
+
         // Supabaseからユーザーを取得
-        const { data: user, error } = await supabase
+        const { data: user, error } = await supabaseAdmin
           .from('users')
           .select('id, email, name, user_pass, user_nicename, user_img_url, status')
           .eq('email', credentials.email as string)
@@ -125,7 +133,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         try {
           // LINE/X認証の場合、Supabaseのusersテーブルにユーザー情報を保存
           if (account?.provider === 'line' || account?.provider === 'twitter') {
-            const { data: existingUser } = await supabase
+            const { data: existingUser } = await supabaseAdmin
               .from('users')
               .select('id')
               .eq('id', user.id)
@@ -133,7 +141,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
             if (!existingUser) {
               // 新規ユーザーの場合、usersテーブルに挿入
-              const { error: insertError } = await supabase
+              const { error: insertError } = await supabaseAdmin
                 .from('users')
                 .insert({
                   id: user.id,
@@ -158,7 +166,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           today.setHours(0, 0, 0, 0);
           
           // 今日既にログインポイントを取得しているか確認
-          const { data: todayPoints, error: checkError } = await supabase
+          const { data: todayPoints, error: checkError } = await supabaseAdmin
             .from('points')
             .select('id')
             .eq('user_id', user.id)
@@ -182,7 +190,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           }
 
           // point_settingsからloginのポイント値を取得
-          const { data: pointSetting, error: settingError } = await supabase
+          const { data: pointSetting, error: settingError } = await supabaseAdmin
             .from('point_settings')
             .select('point_value')
             .eq('point_type', 'login')
@@ -197,7 +205,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           }
 
           // 最大IDを取得してシーケンスエラーを回避
-          const { data: maxIdData } = await supabase
+          const { data: maxIdData } = await supabaseAdmin
             .from('points')
             .select('id')
             .order('id', { ascending: false })
@@ -206,7 +214,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           const nextId = maxIdData && maxIdData.length > 0 ? maxIdData[0].id + 1 : 1;
 
           // ログインポイントを付与
-          const { error: pointError } = await supabase
+          const { error: pointError } = await supabaseAdmin
             .from('points')
             .insert({
               id: nextId,

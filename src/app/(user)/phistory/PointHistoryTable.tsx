@@ -15,7 +15,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface PointRecord {
   id: number;
-  amount: number;
+  points?: number;
+  amount?: number;
   type: string;
   created_at: string;
 }
@@ -133,7 +134,10 @@ export default function PointHistoryTable() {
                         {getPointTypeLabel(record.type)}
                       </TableCell>
                       <TableCell className="text-right font-medium">
-                        {record.amount >= 0 ? '+' : ''}{record.amount.toLocaleString()}
+                        {(() => {
+                          const pointValue = record.amount !== null && record.amount !== undefined ? record.amount : (record.points || 0);
+                          return `${pointValue >= 0 ? '+' : ''}${pointValue.toLocaleString()}`;
+                        })()}
                       </TableCell>
                     </TableRow>
                   ))}

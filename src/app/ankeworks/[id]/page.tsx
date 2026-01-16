@@ -28,20 +28,31 @@ async function getWorkerPostCount(workerId: string) {
   const { count } = await supabase
     .from('posts')
     .select('id', { count: 'exact', head: true })
-    .eq('workid', workerId);
+    .eq('workid', workerId)
+    .in('status', ['publish', 'published']);
 
   return count || 0;
 }
 
-async function getVotePerPrice() {
-  const { data } = await supabase
+async function getPointSettings() {
+  const { data: workVote } = await supabase
     .from('point_settings')
     .select('point_value')
     .eq('point_type', 'work_vote')
     .eq('is_active', true)
     .single();
 
-  return data?.point_value || 10;
+  const { data: workPost } = await supabase
+    .from('point_settings')
+    .select('point_value')
+    .eq('point_type', 'work_post')
+    .eq('is_active', true)
+    .single();
+
+  return {
+    workVotePoint: workVote?.point_value || 5,
+    workPostPoint: workPost?.point_value || 5
+  };
 }
 
 async function getWorkerPosts(workerId: string) {
@@ -64,16 +75,16 @@ export default async function WorkerDetailPage({ params }: WorkerPageProps) {
   }
 
   const postCount = await getWorkerPostCount(id);
-  const votePerPrice = await getVotePerPrice();
+  const { workVotePoint, workPostPoint } = await getPointSettings();
   const posts = await getWorkerPosts(id);
 
   return (
     <div className="bg-gray-50 min-h-screen">
       <Header />
       
-      <div className="wrapper max-w-7xl mx-auto px-4 py-8">
+      <div className="wrapper max-w-7xl mx-auto px-4 py-8 mt-16 sm:mt-0">
         <main className="bg-white border border-gray-200 p-6 rounded">
-          <h1 className="text-2xl font-bold mb-4">{worker.title}</h1>
+          <h1 className="text-xl sm:text-2xl font-bold mb-4 break-words">{worker.title}</h1>
           
           <div className="mb-6">
             <div className="text-sm text-gray-600 mb-2">
@@ -93,7 +104,7 @@ export default async function WorkerDetailPage({ params }: WorkerPageProps) {
             <tbody>
               <tr className="border-b">
                 <th className="bg-gray-100 p-3 text-left font-medium w-48">報酬単価</th>
-                <td className="p-3">1票獲得毎に{votePerPrice}pt獲得</td>
+                <td className="p-3">作成で{workPostPoint}pt獲得、1票獲得毎に{workVotePoint}pt獲得</td>
               </tr>
               <tr className="border-b">
                 <th className="bg-gray-100 p-3 text-left font-medium">残予算</th>
@@ -112,7 +123,7 @@ export default async function WorkerDetailPage({ params }: WorkerPageProps) {
               <tr>
                 <th className="bg-gray-100 p-3 text-left font-medium">募集状況</th>
                 <td className="p-3">
-                  {worker.vote_budget >= votePerPrice ? '募集中' : '募集終了'}
+                  {worker.vote_budget >= workVotePoint ? '募集中' : '募集終了'}
                 </td>
               </tr>
             </tbody>
