@@ -3,6 +3,7 @@
 import { useSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function UserRightSidebar() {
   const { data: session, status } = useSession();
@@ -60,9 +61,11 @@ export default function UserRightSidebar() {
         
         <div className="my-2.5 text-center">
           <Link href="/ankeworks" className="inline-block">
-            <img 
-              src="https://anke.jp/wp-content/themes/anke/images/ankeworks.webp" 
+            <Image 
+              src="/images/ankeworks.webp" 
               alt="アンケワークス" 
+              width={64}
+              height={64}
               className="w-16 h-auto"
             />
           </Link>
