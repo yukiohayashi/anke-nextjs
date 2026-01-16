@@ -137,7 +137,7 @@ export default function NotificationList() {
             className="hover:bg-gray-100 m-1.5 px-2 pb-2.5 border-gray-300 border-b transition-colors"
           >
             <div className="flex items-start mb-2 anke_meta_info">
-              <div className="shrink-0 mr-1.5 anke_meta_icon relative">
+              <div className="shrink-0 mr-1.5 anke_meta_icon">
                 <Link href={notification.author_url}>
                   <img 
                     src={notification.avatar_src || '/images/default_avatar.jpg'} 
@@ -145,9 +145,6 @@ export default function NotificationList() {
                     className="rounded-full w-5 h-5 object-cover"
                   />
                 </Link>
-                {!notification.is_read && (
-                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-red-500 rounded-full"></span>
-                )}
               </div>
               <div className="flex flex-col anke_meta_text">
                 <div className="mb-0 text-gray-700 text-sm anke_meta_nickname">

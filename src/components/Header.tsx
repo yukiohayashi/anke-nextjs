@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
+import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { supabase } from '../lib/supabase';
@@ -12,6 +13,7 @@ import MobileRightSidebar from './MobileRightSidebar';
 
 export default function Header() {
   const { data: session, status } = useSession();
+  const pathname = usePathname();
   const [postsCount, setPostsCount] = useState(0);
   const [leftSidebarOpen, setLeftSidebarOpen] = useState(false);
   const [rightSidebarOpen, setRightSidebarOpen] = useState(false);
@@ -41,8 +43,15 @@ export default function Header() {
         .catch(() => {
           // エラー時はデフォルトアバターを使用
         });
+    } else {
+      setAvatarUrl('');
+      setUnreadCount(0);
+    }
+  }, [session]);
 
-      // 未読通知数を取得
+  // 未読通知数を取得（ページ遷移時に再取得）
+  useEffect(() => {
+    if (session?.user?.id) {
       fetch(`/api/notifications/unread?userId=${session.user.id}`)
         .then(res => res.json())
         .then(data => {
@@ -53,11 +62,8 @@ export default function Header() {
         .catch(() => {
           setUnreadCount(0);
         });
-    } else {
-      setAvatarUrl('');
-      setUnreadCount(0);
     }
-  }, [session]);
+  }, [session, pathname]);
 
   return (
     <>

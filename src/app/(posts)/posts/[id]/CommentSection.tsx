@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 
@@ -43,6 +43,23 @@ function getTimeAgo(dateString: string): string {
   if (diffHour > 0) return `${diffHour}時間`;
   if (diffMin > 0) return `${diffMin}分`;
   return '1分未満';
+}
+
+// クライアント側でのみレンダリングする時間表示コンポーネント
+function TimeAgo({ dateString }: { dateString: string }) {
+  const [timeAgo, setTimeAgo] = useState<string>('');
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    setTimeAgo(getTimeAgo(dateString));
+  }, [dateString]);
+
+  if (!mounted) {
+    return <span className="text-gray-500 text-xs">...</span>;
+  }
+
+  return <span className="text-gray-500 text-xs">{timeAgo}前</span>;
 }
 
 export default function CommentSection({ postId, initialComments, totalCount }: CommentSectionProps) {
@@ -210,7 +227,6 @@ export default function CommentSection({ postId, initialComments, totalCount }: 
               const users = comment.users;
               const userName = users?.name || 'ゲスト';
               const hasAvatar = users?.user_img_url;
-              const timeAgo = getTimeAgo(comment.created_at);
               const replies = replyComments.filter(r => r.parent_id === comment.id);
               
               return (
@@ -258,7 +274,7 @@ export default function CommentSection({ postId, initialComments, totalCount }: 
                         ) : (
                           <span className="font-medium text-gray-600 text-sm">{userName}</span>
                         )}
-                        <span className="text-gray-500 text-xs">{timeAgo}前</span>
+                        <TimeAgo dateString={comment.created_at} />
                       </div>
                       <span className="text-gray-400 hover:text-gray-600 text-xs transition-colors cursor-pointer" 
                             onClick={() => {
@@ -301,7 +317,6 @@ export default function CommentSection({ postId, initialComments, totalCount }: 
                     const replyUsers = reply.users;
                     const replyUserName = replyUsers?.name || 'ゲスト';
                     const replyHasAvatar = replyUsers?.user_img_url;
-                    const replyTimeAgo = getTimeAgo(reply.created_at);
                     
                     return (
                       <div key={reply.id} className="ml-12 mt-2">
@@ -348,7 +363,7 @@ export default function CommentSection({ postId, initialComments, totalCount }: 
                                 ) : (
                                   <span className="font-medium text-gray-600 text-sm">{replyUserName}</span>
                                 )}
-                                <span className="text-gray-500 text-xs">{replyTimeAgo}前</span>
+                                <TimeAgo dateString={reply.created_at} />
                               </div>
                               <span className="text-gray-400 hover:text-gray-600 text-xs transition-colors cursor-pointer" 
                                     onClick={() => {
