@@ -584,6 +584,73 @@ sudo tail -f /var/log/nginx/access.log
 sudo tail -f /var/log/nginx/error.log
 ```
 
+## リモートSupabaseへのデータ同期
+
+### ローカルからリモートへのデータエクスポート
+
+ローカルのSupabaseデータをリモートSupabaseに同期する場合：
+
+```bash
+# ローカルのデータをエクスポート
+docker exec supabase_db_anke-nextjs-dev pg_dump -U postgres -d postgres -t テーブル名 --data-only --column-inserts > /tmp/data.sql
+
+# SQLファイルの内容を確認
+cat /tmp/data.sql
+```
+
+リモートSupabaseのSQL Editorで実行：
+```sql
+-- データを挿入（改行を削除して1行にする）
+INSERT INTO テーブル名 (カラム1, カラム2, ...) VALUES (...);
+
+-- シーケンスを更新
+SELECT setval('テーブル名_id_seq', 最大ID, true);
+```
+
+### データが表示されない場合の確認事項
+
+**1. テーブル権限の確認**
+```sql
+-- anon権限を確認
+SELECT grantee, privilege_type 
+FROM information_schema.role_table_grants 
+WHERE table_name = 'テーブル名' AND grantee = 'anon';
+
+-- 権限を付与
+GRANT SELECT ON テーブル名 TO anon, authenticated;
+```
+
+**2. RLSの確認**
+```sql
+-- RLSが有効か確認
+SELECT tablename, rowsecurity 
+FROM pg_tables 
+WHERE tablename = 'テーブル名';
+
+-- RLSを無効化（必要に応じて）
+ALTER TABLE テーブル名 DISABLE ROW LEVEL SECURITY;
+```
+
+**3. Next.jsの静的生成の問題**
+
+ページがビルド時に静的生成される場合、ビルド後にデータを追加しても反映されません。
+
+解決方法：ページを動的レンダリングに変更
+```typescript
+// ページファイルの先頭に追加
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+```
+
+その後、再ビルド：
+```bash
+cd /var/www/anke-nextjs
+pm2 stop anke-nextjs
+rm -rf .next
+npm run build
+pm2 start anke-nextjs
+```
+
 ## バックアップ
 
 ### データベースバックアップ

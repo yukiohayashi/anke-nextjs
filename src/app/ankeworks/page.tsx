@@ -27,7 +27,6 @@ interface Worker {
 }
 
 async function getWorkers(category?: string) {
-  console.log('🔍 Fetching workers from Supabase...');
   const { data: workers, error } = await supabase
     .from('workers')
     .select('*')
@@ -35,11 +34,9 @@ async function getWorkers(category?: string) {
     .order('created_at', { ascending: false });
 
   if (error) {
-    console.error('❌ Error fetching workers:', error);
+    console.error('Error fetching workers:', error);
     return [];
   }
-
-  console.log('✅ Workers fetched:', workers?.length || 0, 'records');
 
   // 各workerの作成数を取得
   const workersWithCount = await Promise.all(
